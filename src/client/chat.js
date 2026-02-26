@@ -384,7 +384,7 @@ module.exports = function (client, options) {
           timestamp: options.timestamp,
           salt: options.salt,
           argumentSignatures: canSign ? signaturesForCommand(command, options.timestamp, options.salt, options.preview, acknowledgements) : [],
-          messageCount: toSignedByte(client._lastSeenMessages.pending),
+          messageCount: client._lastSeenMessages.pending,
           checksum: toSignedByte(computeChatChecksum(client._lastSeenMessages)), // 1.21.5+
           acknowledged
         }
@@ -416,7 +416,7 @@ module.exports = function (client, options) {
         timestamp: options.timestamp,
         salt: options.salt,
         signature: (client.profileKeys && client._session) ? client.signMessage(message, options.timestamp, options.salt, undefined, acknowledgements) : undefined,
-        offset: toSignedByte(client._lastSeenMessages.pending),
+        offset: client._lastSeenMessages.pending,
         checksum: toSignedByte(computeChatChecksum(client._lastSeenMessages)), // 1.21.5+
         acknowledged
       })
