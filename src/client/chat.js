@@ -4,6 +4,14 @@ const concat = require('../transforms/binaryStream').concat
 const { processNbtMessage } = require('prismarine-chat')
 const messageExpireTime = 420000 // 7 minutes (ms)
 
+// Convert to signed byte (i8 range: -128 to 127)
+// Fixes ERR_OUT_OF_RANGE when pending counter exceeds 127
+// See: https://github.com/PrismarineJS/mineflayer/issues/3765
+const toSignedByte = (value) => {
+  const byte = value & 0xff
+  return byte > 127 ? byte - 256 : byte
+}
+
 function isFormatted (message) {
   // This should match the ChatComponent.isDecorated function from Vanilla
   try {
@@ -376,8 +384,8 @@ module.exports = function (client, options) {
           timestamp: options.timestamp,
           salt: options.salt,
           argumentSignatures: canSign ? signaturesForCommand(command, options.timestamp, options.salt, options.preview, acknowledgements) : [],
-          messageCount: client._lastSeenMessages.pending,
-          checksum: computeChatChecksum(client._lastSeenMessages), // 1.21.5+
+          messageCount: toSignedByte(client._lastSeenMessages.pending),
+          checksum: toSignedByte(computeChatChecksum(client._lastSeenMessages)), // 1.21.5+
           acknowledged
         }
         client.write((mcData.supportFeature('seperateSignedChatCommandPacket') && canSign) ? 'chat_command_signed' : 'chat_command', chatPacket)
@@ -408,8 +416,8 @@ module.exports = function (client, options) {
         timestamp: options.timestamp,
         salt: options.salt,
         signature: (client.profileKeys && client._session) ? client.signMessage(message, options.timestamp, options.salt, undefined, acknowledgements) : undefined,
-        offset: client._lastSeenMessages.pending,
-        checksum: computeChatChecksum(client._lastSeenMessages), // 1.21.5+
+        offset: toSignedByte(client._lastSeenMessages.pending),
+        checksum: toSignedByte(computeChatChecksum(client._lastSeenMessages)), // 1.21.5+
         acknowledged
       })
       client._lastSeenMessages.pending = 0
